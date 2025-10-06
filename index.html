@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Plataforma da Olimpíada de Competições da Rede AutoPrime para lançamento e acompanhamento de métricas de performance.">
+    <title>Olimpíada de Competições - Rede AutoPrime</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+
+    <style>
+        :root {
+            --color-primary: #0F172A; --color-secondary: #1E293B; --color-text-primary: #F8FAFC;
+            --color-text-secondary: #94A3B8; --color-text-body: #334155; --color-accent: #2563EB;
+            --color-accent-hover: #1D4ED8; --color-background: #F1F5F9; --color-surface: #FFFFFF;
+            --color-highlight: #E0F2FE; --color-border: #CBD5E1; --color-success: #16A34A;
+            --color-success-bg: #F0FDF4; --color-error: #DC2626; --color-error-bg: #FEF2F2;
+            --color-error-link: #991B1B; --color-info: #3B82F6; --color-info-bg: #EFF6FF;
+            --color-gold: #CA8A04; --color-gold-bg: #FEFCE8; --color-silver: #94A3B8;
+            --color-silver-bg: #F1F5F9; --color-bronze: #A16207; --color-bronze-bg: #FEF9C3;
+            --color-champion-bg: #FEFCE8; --color-champion-text: #B45309;
+            --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-size-sm: 0.875rem; --font-size-base: 1rem; --font-size-lg: 1.125rem;
+            --font-size-xl: 1.25rem; --font-size-2xl: 1.5rem; --font-size-3xl: 1.875rem;
+            --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+            --space-6: 1.5rem; --space-8: 2rem; --border-radius: 0.5rem; --border-radius-lg: 0.75rem;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --transition: all 0.2s ease-in-out;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+        body { font-family: var(--font-family-sans); background-color: var(--color-background); color: var(--color-text-body); display: flex; flex-direction: column; align-items: center; line-height: 1.6; }
+        .app-header { width: 100%; position: fixed; top: 0; left: 0; background-color: var(--color-primary); color: var(--color-text-primary); padding: var(--space-3) var(--space-4); z-index: 1000; box-shadow: var(--shadow-lg); display: none; }
+        .app-header__container { width: 100%; max-width: 1280px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-4); }
+        .app-header__brand { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-lg); font-weight: 700; }
+        .app-logo-img { height: 32px; width: auto; }
+        .app-header__company-name { font-weight: 400; color: var(--color-text-secondary); border-left: 1px solid var(--color-text-secondary); padding-left: var(--space-3); margin-left: var(--space-2); }
+        .app-header__nav { display: flex; align-items: center; gap: var(--space-1); flex-wrap: wrap; }
+        .page-container { display: flex; justify-content: center; align-items: center; flex-grow: 1; width: 100%; padding: var(--space-4); padding-top: 100px; }
+        .auth-container, .app-container { width: 100%; background-color: var(--color-surface); border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg); padding: var(--space-6); }
+        .auth-container { max-width: 420px; }
+        .app-container { max-width: 896px; }
+        .screen { display: none; }
+        .screen.is-active { display: block; }
+        .btn { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); font-family: var(--font-family-sans); font-size: var(--font-size-base); font-weight: 600; border-radius: var(--border-radius); border: 1px solid transparent; cursor: pointer; transition: var(--transition); text-decoration: none; white-space: nowrap; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+        .btn--primary { background-color: var(--color-primary); color: var(--color-text-primary); }
+        .btn--primary:hover:not(:disabled) { background-color: var(--color-accent); }
+        .btn--secondary { background-color: transparent; color: var(--color-text-body); border-color: var(--color-border); }
+        .btn--secondary:hover:not(:disabled) { background-color: var(--color-background); border-color: var(--color-text-secondary); }
+        .btn--success { background-color: var(--color-success); color: var(--color-text-primary); }
+        .btn--danger { background-color: var(--color-error); color: var(--color-text-primary); }
+        .btn--full { width: 100%; }
+        .nav-btn { background: transparent; border: none; color: var(--color-text-secondary); padding: var(--space-2) var(--space-3); border-radius: var(--border-radius); font-size: var(--font-size-sm); font-weight: 600; }
+        .nav-btn:hover { background-color: var(--color-secondary); color: var(--color-text-primary); }
+        .nav-btn.is-active { background-color: var(--color-accent); color: var(--color-text-primary); }
+        .form-group { margin-bottom: var(--space-4); }
+        .form-label { display: block; font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-2); }
+        .form-input { width: 100%; padding: var(--space-2) var(--space-3); font-size: var(--font-size-base); border: 1px solid var(--color-border); border-radius: var(--border-radius); transition: var(--transition); }
+        .form-input:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2); }
+        .section-header { margin-bottom: var(--space-6); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); }
+        .section-header__title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); }
+        .message-box { padding: var(--space-3); margin-bottom: var(--space-4); border-radius: var(--border-radius); font-size: var(--font-size-sm); display: none; }
+        .message-box.is-visible { display: block; }
+        .message-box--error { background-color: var(--color-error-bg); color: var(--color-error); }
+        .message-box--error a { color: var(--color-error-link); font-weight: bold; text-decoration: underline; }
+        .message-box--success { background-color: var(--color-success-bg); color: var(--color-success); }
+        .message-box--info { background-color: var(--color-info-bg); color: var(--color-info); }
+        .spinner { border: 2px solid rgba(255, 255, 255, 0.3); border-top: 2px solid #fff; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        .spinner--dark { border-color: var(--color-border); border-top-color: var(--color-primary); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-placeholder { text-align: center; color: var(--color-text-secondary); padding: var(--space-8); display: flex; flex-direction: column; align-items: center; gap: var(--space-4); }
+        .auth-header { text-align: center; margin-bottom: var(--space-6); }
+        .auth-logo-img { height: 40px; width: auto; margin: 0 auto var(--space-3); display: block; }
+        .auth-header__title { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); }
+        .auth-header__subtitle { font-size: var(--font-size-sm); color: var(--color-text-secondary); margin-top: var(--space-1); }
+        .launch-group { background-color: var(--color-highlight); border: 1px solid var(--color-border); border-radius: var(--border-radius); padding: var(--space-4); margin-bottom: var(--space-4); }
+        .launch-grid { display: grid; gap: var(--space-4); }
+        .modal-overlay { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.75); display: flex; align-items: center; justify-content: center; z-index: 2000; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; }
+        .modal-overlay.is-visible { opacity: 1; visibility: visible; }
+        .modal-content { background-color: var(--color-surface); padding: var(--space-6); border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg); width: 100%; max-width: 500px; transform: scale(0.95); transition: transform 0.3s; }
+        .modal-overlay.is-visible .modal-content { transform: scale(1); }
+        .modal__title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary); margin-bottom: var(--space-2); }
+        .modal__description { color: var(--color-text-secondary); margin-bottom: var(--space-4); }
+        .modal__review-box { background-color: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--border-radius); padding: var(--space-4); margin-bottom: var(--space-6); font-size: var(--font-size-sm); line-height: 1.8; }
+        .modal__actions { display: flex; justify-content: flex-end; gap: var(--space-3); }
+        .history-item { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--border-radius); transition: var(--transition); margin-bottom: var(--space-4); }
+        .history-item:hover { background-color: var(--color-highlight); }
+        .history-item__header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-2); }
+        .history-item__title { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-primary); }
+        .history-item__meta-group { text-align: right; }
+        .history-item__meta { font-size: var(--font-size-sm); color: var(--color-text-secondary); display: block; }
+        .history-item__details { font-size: var(--font-size-sm); color: var(--color-text-secondary); list-style-position: inside; padding-left: var(--space-1); }
+        .ranking-sections { display: grid; gap: var(--space-6); }
+        .champion-card { padding: var(--space-6); background-color: var(--color-champion-bg); border: 2px solid var(--color-primary); border-radius: var(--border-radius-lg); box-shadow: var(--shadow-lg); text-align: center; margin-bottom: var(--space-8); }
+        .champion-card__title { font-size: var(--font-size-xl); font-weight: 800; color: var(--color-primary); display: flex; align-items: center; justify-content: center; gap: var(--space-2); }
+        .champion-card__company-name { font-size: var(--font-size-2xl); font-weight: 800; color: var(--color-primary); margin-top: var(--space-2); }
+        .ranking-card { background-color: var(--color-surface); padding: var(--space-4); border-radius: var(--border-radius-lg); box-shadow: var(--shadow); border: 1px solid var(--color-border); }
+        .ranking-card__title { font-size: var(--font-size-xl); font-weight: 700; color: var(--color-primary); margin-bottom: var(--space-4); }
+        .ranking-item { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3); margin-bottom: var(--space-2); border-radius: var(--border-radius); font-weight: 600; border-left: 5px solid; }
+        .ranking-item:last-child { margin-bottom: 0; }
+        .ranking-item--gold { background-color: var(--color-gold-bg); border-color: var(--color-gold); }
+        .ranking-item--silver { background-color: var(--color-silver-bg); border-color: var(--color-silver); }
+        .ranking-item--bronze { background-color: var(--color-bronze-bg); border-color: var(--color-bronze); }
+        @media (min-width: 640px) { .launch-grid, .ranking-sections { grid-template-columns: repeat(2, 1fr); } .launch-grid__full-width { grid-column: 1 / -1; } }
+        @media (min-width: 1024px) { .ranking-sections { grid-template-columns: repeat(3, 1fr); } }
+        .hidden { display: none !important; }
+        .is-disabled { opacity: 0.4; background-color: #f8fafc; pointer-events: none; }
+        .is-disabled .form-label { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header id="app-header" class="app-header">
+        <div class="app-header__container">
+            <div class="app-header__brand" role="banner">
+                <img src="Rede Auto Prime II.png" alt="Logo Rede AutoPrime" class="app-logo-img">
+                Olimpíada <span id="header-empresa-name" class="app-header__company-name"></span>
+            </div>
+            <nav class="app-header__nav" aria-label="Navegação principal"><button data-screen="lanca" class="nav-btn">Lançamentos</button><button data-screen="historico" class="nav-btn">Histórico</button><button data-screen="ranking" class="nav-btn">Ranking de Empresas</button><button id="logout-button" class="btn btn--danger" style="padding: var(--space-1) var(--space-3); font-size: var(--font-size-sm);">Sair</button></nav>
+        </div>
+    </header>
+
+    <main class="page-container">
+        <section id="login-container" class="auth-container">
+            <header class="auth-header">
+                <img src="Rede Auto Prime II.png" alt="Logo Rede AutoPrime" class="auth-logo-img">
+                <h1 class="auth-header__title">Olimpíada - Acesso</h1>
+            </header>
+            <form id="login-form" novalidate>
+                <div class="form-group"><label for="username" class="form-label">Usuário (Login Numérico)</label><input type="text" id="username" name="username" required class="form-input" placeholder="Seu login numérico" pattern="[0-9]+"></div>
+                <div class="form-group"><label for="password" class="form-label">Senha (Numérica)</label><input type="password" id="password" name="password" required class="form-input" placeholder="Sua senha numérica" pattern="[0-9]+"></div>
+                <div id="login-message-box" class="message-box" role="alert"></div>
+                <button type="submit" id="login-button" class="btn btn--primary btn--full"><span id="login-button-text">Entrar</span><div id="login-spinner" class="spinner hidden" aria-label="Carregando"></div></button>
+            </form>
+        </section>
+
+        <article id="app-main-content" class="app-container hidden">
+            <section id="screen-lanca" class="screen">
+                <header class="section-header"><h2 class="section-header__title">Lançamento Diário de Competições</h2></header>
+                <form id="lanca-form" novalidate>
+                    <div class="form-group"><label for="lanca-date" class="form-label">Data do Lançamento (Dia dos Fatos):</label><input type="date" id="lanca-date" name="lanca-date" required class="form-input"></div>
+                    <h3 class="section-header__title" style="font-size: var(--font-size-xl); margin-top: var(--space-8);">Modalidades</h3>
+                    
+                    <div id="group-produtividade" class="launch-group"><label for="produtividade-entregues" class="form-label"><strong>Produtividade:</strong> Digite a quantidade de carros entregues <strong>no dia selecionado</strong></label><input type="number" id="produtividade-entregues" name="produtividade-entregues" required min="0" placeholder="Ex: 10" class="form-input"></div>
+                    
+                    <div id="group-ticketMedio" class="launch-group"><label for="ticket-medio-mo" class="form-label"><strong>Ticket Médio:</strong> Digite o valor do ticket médio de M.O. dos carros de seguro <strong>deste mês</strong> (Valor R$)</label><input type="number" id="ticket-medio-mo" name="ticket-medio-mo" required min="0" step="0.01" placeholder="Ex: 1500.50" class="form-input"></div>
+                    
+                    <div id="group-vendaAgregada" class="launch-group">
+                        <h4 class="form-label" style="font-size: 1rem;"><strong>Venda Agregada:</strong></h4>
+                        <label for="venda-seguro-abertos" class="form-label" style="font-weight: 400; font-size: var(--font-size-sm);">Carros de seguro que abriram O.S. <strong>no dia</strong>.</label><input type="number" id="venda-seguro-abertos" name="venda-seguro-abertos" required min="0" placeholder="Total de carros de seguro" class="form-input" style="margin-bottom: var(--space-4);">
+                        <label for="venda-agregada-fechados" class="form-label" style="font-weight: 400; font-size: var(--font-size-sm);">Desses, quantos fecharam venda agregada <strong>no dia</strong>.</label><input type="number" id="venda-agregada-fechados" name="venda-agregada-fechados" required min="0" placeholder="Carros com venda agregada" class="form-input">
+                    </div>
+                    
+                    <div id="group-estabilidade">
+                        <h3 class="section-header__title" style="font-size: var(--font-size-xl); margin-top: var(--space-8);">Estabilidade por Setor (Finalizados no Dia)</h3>
+                        <div class="launch-grid">
+                            <div class="form-group"><label for="estabilidade-funilaria" class="form-label">Funilaria:</label><input type="number" id="estabilidade-funilaria" name="estabilidade-funilaria" required min="0" placeholder="Carros" class="form-input"></div>
+                            <div class="form-group"><label for="estabilidade-preparacao" class="form-label">Preparação:</label><input type="number" id="estabilidade-preparacao" name="estabilidade-preparacao" required min="0" placeholder="Carros" class="form-input"></div>
+                            <div class="form-group"><label for="estabilidade-pintura" class="form-label">Pintura:</label><input type="number" id="estabilidade-pintura" name="estabilidade-pintura" required min="0" placeholder="Carros" class="form-input"></div>
+                            <div class="form-group"><label for="estabilidade-montagem" class="form-label">Montagem:</label><input type="number" id="estabilidade-montagem" name="estabilidade-montagem" required min="0" placeholder="Carros" class="form-input"></div>
+                            <div class="form-group launch-grid__full-width"><label for="estabilidade-polimento" class="form-label">Polimento:</label><input type="number" id="estabilidade-polimento" name="estabilidade-polimento" required min="0" placeholder="Carros" class="form-input"></div>
+                        </div>
+                    </div>
+                    <div id="lanca-message-box" class="message-box" role="alert"></div>
+                    <button type="submit" class="btn btn--primary btn--full" style="margin-top: var(--space-4);">Conferir e Lançar Dados</button>
+                </form>
+            </section>
+            <section id="screen-historico" class="screen">
+                <header class="section-header" style="display: flex; justify-content: space-between; align-items: center;"><h2 id="history-title" class="section-header__title">Meu Histórico de Lançamentos</h2><button id="refresh-history-button" class="btn btn--secondary">Atualizar</button></header>
+                <div id="historico-loading" class="loading-placeholder hidden"><div class="spinner spinner--dark"></div><span>Carregando histórico...</span></div>
+                <div id="historico-list"></div><p id="historico-empty" class="hidden">Nenhum lançamento encontrado.</p><div id="historico-message-box" class="message-box" role="alert"></div>
+            </section>
+            <section id="screen-ranking" class="screen">
+                <header class="section-header"><h2 class="section-header__title">Ranking Geral de Empresas</h2></header>
+                <div id="ranking-loading" class="loading-placeholder hidden"><div class="spinner spinner--dark"></div><span>Calculando Ranking...</span></div>
+                <div id="campeao-geral-container" class="champion-card hidden"><h3 class="champion-card__title"><span class="icon" aria-hidden="true">👑</span> EMPRESA CAMPEÃ</h3><div id="campeao-geral-details"></div></div>
+                <div id="ranking-container" class="ranking-sections"></div><div id="ranking-message-box" class="message-box" role="alert"></div>
+            </section>
+        </article>
+    </main>
+    <div id="lanca-confirm-modal" class="modal-overlay">
+        <div class="modal-content" role="dialog" aria-labelledby="modal-title" aria-modal="true">
+            <h3 id="modal-title" class="modal__title">Confirmação de Lançamento</h3><p class="modal__description">Confira os dados antes de salvar. Lançamentos não podem ser editados.</p>
+            <div id="lanca-data-review" class="modal__review-box"></div>
+            <div class="modal__actions"><button id="modal-cancel-button" class="btn btn--secondary">Voltar</button><button id="modal-confirm-button" class="btn btn--success">Confirmar</button></div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, setDoc, doc, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyA8Esglzu0IlyTfTeC9tt6to2CyTlXhkV4",
+            authDomain: "olimpiedaautoprime-1f4ac.firebaseapp.com",
+            projectId: "olimpiedaautoprime-1f4ac",
+            storageBucket: "olimpiedaautoprime-1f4ac.firebasestorage.app",
+            messagingSenderId: "866395369069",
+            appId: "1:866395369069:web:daa97d36bccdd9822d5964",
+            measurementId: "G-M6WKSM7PCT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+
+        const COLLECTIONS = { USERS: 'usuarios', COMPANIES: 'empresas', LAUNCHES: 'lancamentos' };
+        const ESTABILIDADE_FIELDS = ['estabilidadeFunilaria', 'estabilidadePreparacao', 'estabilidadePintura', 'estabilidadeMontagem', 'estabilidadePolimento'];
+        const MODALITY_WEIGHTS = { produtividadeScore: 3, ticketMedioScore: 3, vendaAgregadaScore: 3, estabilidadeFunilaria: 0.5, estabilidadePreparacao: 0.5, estabilidadePintura: 0.5, estabilidadeMontagem: 0.5, estabilidadePolimento: 0.5 };
+        
+        const appState = { currentUser: null, companyData: null, dailyLaunchData: {} };
+
+        const DOMElements = {
+            header: document.getElementById('app-header'), headerEmpresaName: document.getElementById('header-empresa-name'), loginContainer: document.getElementById('login-container'),
+            appContainer: document.getElementById('app-main-content'), loginForm: document.getElementById('login-form'),
+            loginButton: document.getElementById('login-button'), loginButtonText: document.getElementById('login-button-text'), loginSpinner: document.getElementById('login-spinner'),
+            loginMessageBox: document.getElementById('login-message-box'),
+            navButtons: document.querySelectorAll('.app-header__nav .nav-btn'), logoutButton: document.getElementById('logout-button'), screens: document.querySelectorAll('.screen'),
+            lancaForm: document.getElementById('lanca-form'), lancaDateInput: document.getElementById('lanca-date'), lancaMessageBox: document.getElementById('lanca-message-box'),
+            confirmModal: document.getElementById('lanca-confirm-modal'), modalReviewBox: document.getElementById('lanca-data-review'), modalCancelButton: document.getElementById('modal-cancel-button'),
+            modalConfirmButton: document.getElementById('modal-confirm-button'), refreshHistoryButton: document.getElementById('refresh-history-button'), 
+            historyTitle: document.getElementById('history-title'), historicoList: document.getElementById('historico-list'),
+            historicoLoading: document.getElementById('historico-loading'), historicoEmpty: document.getElementById('historico-empty'), historicoMessageBox: document.getElementById('historico-message-box'),
+            rankingContainer: document.getElementById('ranking-container'), rankingLoading: document.getElementById('ranking-loading'), rankingMessageBox: document.getElementById('ranking-message-box'),
+            championContainer: document.getElementById('campeao-geral-container'), championDetails: document.getElementById('campeao-geral-details')
+        };
+
+        const getLocalDateISO = () => new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+        
+        const displayMessage = (message, type, boxElement) => {
+            if (!boxElement) return;
+            boxElement.innerHTML = message;
+            boxElement.className = 'message-box';
+            if (message) boxElement.classList.add(`message-box--${type}`, 'is-visible');
+        };
+
+        const setLoading = (isLoading, button, textElement, spinnerElement, defaultText) => {
+            button.disabled = isLoading;
+            spinnerElement.classList.toggle('hidden', !isLoading);
+            textElement.textContent = isLoading ? 'Processando...' : defaultText;
+        };
+
+        const applyPermissions = () => {
+            const permissions = appState.currentUser?.permissions || {};
+            const allGroups = {
+                produtividade: document.getElementById('group-produtividade'),
+                ticketMedio: document.getElementById('group-ticketMedio'),
+                vendaAgregada: document.getElementById('group-vendaAgregada'),
+                estabilidade: document.getElementById('group-estabilidade')
+            };
+            for (const [key, groupElement] of Object.entries(allGroups)) {
+                if (groupElement) {
+                    const hasPermission = permissions[key] === true;
+                    groupElement.classList.toggle('is-disabled', !hasPermission);
+                    groupElement.querySelectorAll('input').forEach(input => {
+                        input.disabled = !hasPermission;
+                        if (!hasPermission) {
+                            if(input.type === 'number') input.value = 0; else input.value = '';
+                        }
+                    });
+                }
+            }
+        };
+
+        const toggleView = (viewName) => {
+            const isAppView = viewName === 'app';
+            DOMElements.loginContainer.classList.toggle('hidden', viewName !== 'login');
+            DOMElements.appContainer.classList.toggle('hidden', !isAppView);
+            DOMElements.header.style.display = isAppView ? 'flex' : 'none';
+            if (isAppView && appState.companyData) {
+                DOMElements.headerEmpresaName.textContent = appState.companyData.nomeEmpresa;
+                applyPermissions();
+                showScreen('lanca');
+            }
+        };
+        
+        const showScreen = (screenName) => {
+            if (screenName === 'lanca') applyPermissions();
+            DOMElements.screens.forEach(s => s.classList.toggle('is-active', s.id === `screen-${screenName}`));
+            DOMElements.navButtons.forEach(b => b.classList.toggle('is-active', b.dataset.screen === screenName));
+            if (screenName === 'historico') fetchLaunchHistory();
+            if (screenName === 'ranking') fetchRankingData();
+        };
+
+        const handleLogin = async (event) => {
+            event.preventDefault();
+            setLoading(true, DOMElements.loginButton, DOMElements.loginButtonText, DOMElements.loginSpinner, 'Entrar');
+            displayMessage('', 'info', DOMElements.loginMessageBox);
+            const login = DOMElements.loginForm.username.value.trim();
+            const password = DOMElements.loginForm.password.value;
+            if (!login || !password) {
+                displayMessage("Por favor, preencha o login e a senha.", 'error', DOMElements.loginMessageBox);
+                return setLoading(false, DOMElements.loginButton, DOMElements.loginButtonText, DOMElements.loginSpinner, 'Entrar');
+            }
+            try {
+                const userDocRef = doc(db, COLLECTIONS.USERS, login);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    const passwordHash = CryptoJS.SHA256(password).toString();
+                    if (passwordHash === userData.senhaHash) {
+                        sessionStorage.setItem('loggedInUser', login);
+                        await initializeAppState(login);
+                    } else {
+                        displayMessage("Login ou senha inválidos.", 'error', DOMElements.loginMessageBox);
+                    }
+                } else {
+                    displayMessage("Login ou senha inválidos.", 'error', DOMElements.loginMessageBox);
+                }
+            } catch (error) {
+                console.error("Erro de Login:", error);
+                displayMessage("Ocorreu um erro ao tentar fazer login.", 'error', DOMElements.loginMessageBox);
+            } finally {
+                setLoading(false, DOMElements.loginButton, DOMElements.loginButtonText, DOMElements.loginSpinner, 'Entrar');
+            }
+        };
+
+        const handleLogout = () => {
+            sessionStorage.removeItem('loggedInUser');
+            appState.currentUser = null;
+            appState.companyData = null;
+            DOMElements.loginForm.reset();
+            toggleView('login');
+        };
+
+        const initializeAppState = async (userId) => {
+            try {
+                const userDocRef = doc(db, COLLECTIONS.USERS, userId);
+                const userDocSnap = await getDoc(userDocRef);
+                if(!userDocSnap.exists()) throw new Error("Dados do usuário não encontrados.");
+                appState.currentUser = userDocSnap.data();
+                if (!appState.currentUser.empresaId) throw new Error("Usuário não está vinculado a uma empresa.");
+                const companyDocRef = doc(db, COLLECTIONS.COMPANIES, appState.currentUser.empresaId);
+                const companyDocSnap = await getDoc(companyDocRef);
+                if(!companyDocSnap.exists()) throw new Error("Empresa vinculada não foi encontrada.");
+                appState.companyData = { id: companyDocSnap.id, ...companyDocSnap.data() };
+                toggleView('app');
+            } catch (error) {
+                displayMessage(error.message, 'error', DOMElements.loginMessageBox);
+                handleLogout();
+            }
+        };
+
+        const saveDailyLaunch = async () => {
+            const data = appState.dailyLaunchData;
+            const docId = `${data.userId}_${data.dataLancamento}`;
+            try {
+                await setDoc(doc(db, COLLECTIONS.LAUNCHES, docId), data);
+                displayMessage(`Lançamento de ${data.dataLancamento} salvo com sucesso!`, 'success', DOMElements.lancaMessageBox);
+                DOMElements.lancaForm.reset();
+                DOMElements.lancaDateInput.value = getLocalDateISO();
+                applyPermissions();
+            } catch (error) {
+                console.error("Erro ao salvar lançamento:", error);
+                displayMessage(`Erro crítico ao salvar: ${error.message}`, 'error', DOMElements.lancaMessageBox);
+            } finally {
+                DOMElements.confirmModal.classList.remove('is-visible');
+            }
+        };
+
+        const fetchLaunchHistory = async () => {
+            if (!appState.currentUser || !appState.companyData) return;
+            const isMaster = appState.currentUser.isMaster === true;
+            
+            DOMElements.historicoList.innerHTML = '';
+            DOMElements.historicoEmpty.classList.add('hidden');
+            DOMElements.historicoLoading.classList.remove('hidden');
+            displayMessage('', 'info', DOMElements.historicoMessageBox);
+
+            try {
+                let q;
+                if (isMaster) {
+                    DOMElements.historyTitle.textContent = "Histórico da Empresa";
+                    q = query(collection(db, COLLECTIONS.LAUNCHES), where("empresaId", "==", appState.companyData.id), orderBy("dataLancamento", "desc"));
+                } else {
+                    DOMElements.historyTitle.textContent = "Meu Histórico de Lançamentos";
+                    q = query(collection(db, COLLECTIONS.LAUNCHES), where("userId", "==", appState.currentUser.login), orderBy("dataLancamento", "desc"));
+                }
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    DOMElements.historicoEmpty.classList.remove('hidden');
+                } else {
+                    querySnapshot.docs.forEach(doc => {
+                        DOMElements.historicoList.innerHTML += renderHistoryItem(doc.data(), isMaster);
+                    });
+                }
+            } catch (error) {
+                console.error("Erro ao buscar histórico:", error);
+                if (error.message.includes('index')) {
+                    const link = error.message.match(/(https:\/\/[^>\s]+)/)?.[1].replace('...', '');
+                    const msg = `<p><strong>ERRO: ÍNDICE DO FIREBASE FALTANDO.</strong><br>A nova consulta de histórico para Masters pode exigir um índice. Clique no link a seguir para criá-lo no Firebase:</p><a href="${link}" target="_blank" rel="noopener noreferrer">CRIAR ÍNDICE</a>`;
+                    displayMessage(msg, 'error', DOMElements.historicoMessageBox);
+                } else {
+                    displayMessage('Falha ao buscar histórico. Verifique a conexão.', 'error', DOMElements.historicoMessageBox);
+                }
+            } finally {
+                DOMElements.historicoLoading.classList.add('hidden');
+            }
+        };
+        
+        const prepareDailyLaunch = (event) => {
+            event.preventDefault();
+            if (!DOMElements.lancaForm.checkValidity()) {
+                DOMElements.lancaForm.reportValidity();
+                return displayMessage("Preencha todos os campos obrigatórios com permissão.", 'error', DOMElements.lancaMessageBox);
+            }
+            
+            appState.dailyLaunchData = {
+                dataLancamento: document.getElementById('lanca-date').value,
+                timestamp: new Date().toISOString(),
+                userId: appState.currentUser.login,
+                personName: appState.currentUser.personName,
+                empresaId: appState.companyData.id,
+                nomeEmpresa: appState.companyData.nomeEmpresa,
+                produtividadeEntregues: parseInt(document.getElementById('produtividade-entregues').value) || 0,
+                ticketMedioMO: parseFloat(document.getElementById('ticket-medio-mo').value) || 0,
+                vendaSeguroAbertos: parseInt(document.getElementById('venda-seguro-abertos').value) || 0,
+                vendaAgregadaFechados: parseInt(document.getElementById('venda-agregada-fechados').value) || 0,
+                estabilidadeFunilaria: parseInt(document.getElementById('estabilidade-funilaria').value) || 0,
+                estabilidadePreparacao: parseInt(document.getElementById('estabilidade-preparacao').value) || 0,
+                estabilidadePintura: parseInt(document.getElementById('estabilidade-pintura').value) || 0,
+                estabilidadeMontagem: parseInt(document.getElementById('estabilidade-montagem').value) || 0,
+                estabilidadePolimento: parseInt(document.getElementById('estabilidade-polimento').value) || 0,
+            };
+            
+            DOMElements.modalReviewBox.innerHTML = renderReviewModal(appState.dailyLaunchData);
+            DOMElements.confirmModal.classList.add('is-visible');
+        };
+
+        const calculateCV = (values) => {
+            if (values.length < 2) return Infinity;
+            const mean = values.reduce((a, b) => a + b, 0) / values.length;
+            if (mean === 0) return Infinity;
+            const variance = values.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / values.length;
+            const stdDev = Math.sqrt(variance);
+            return (stdDev / mean) * 100;
+        };
+
+        const fetchRankingData = async () => {
+            DOMElements.rankingContainer.innerHTML = '';
+            DOMElements.championContainer.classList.add('hidden');
+            DOMElements.rankingLoading.classList.remove('hidden');
+            displayMessage('', 'info', DOMElements.rankingMessageBox);
+            try {
+                const [launchSnapshot, companiesSnapshot] = await Promise.all([
+                    getDocs(collection(db, COLLECTIONS.LAUNCHES)),
+                    getDocs(collection(db, COLLECTIONS.COMPANIES))
+                ]);
+                if (launchSnapshot.empty) return displayMessage("Nenhum lançamento encontrado para calcular o ranking.", 'info', DOMElements.rankingMessageBox);
+                
+                const companiesData = {};
+                companiesSnapshot.forEach(doc => {
+                    companiesData[doc.id] = { id: doc.id, ...doc.data() };
+                });
+
+                const aggregatedData = launchSnapshot.docs.reduce((acc, doc) => {
+                    const lanca = doc.data();
+                    const { empresaId } = lanca;
+                    const companyData = companiesData[empresaId];
+                    if (!companyData) return acc;
+                    if (!acc[empresaId]) {
+                        acc[empresaId] = {
+                            nomeEmpresa: companyData.nomeEmpresa, metaCarros: companyData.metaCarros || 1,
+                            produtividadeTotal: 0, vendaAgregadaTotal: 0, vendaSeguroTotal: 0,
+                            lastTicketMedio: 0, lastTicketMedioDate: '',
+                            estabilidadeHistory: Object.fromEntries(ESTABILIDADE_FIELDS.map(f => [f, []]))
+                        };
+                    }
+                    const data = acc[empresaId];
+                    data.produtividadeTotal += lanca.produtividadeEntregues || 0;
+                    data.vendaAgregadaTotal += lanca.vendaAgregadaFechados || 0;
+                    data.vendaSeguroTotal += lanca.vendaSeguroAbertos || 0;
+                    if (!data.lastTicketMedioDate || lanca.dataLancamento > data.lastTicketMedioDate) {
+                        data.lastTicketMedio = lanca.ticketMedioMO || 0;
+                        data.lastTicketMedioDate = lanca.dataLancamento;
+                    }
+                    ESTABILIDADE_FIELDS.forEach(field => data.estabilidadeHistory[field].push(lanca[field] || 0));
+                    return acc;
+                }, {});
+                
+                const finalRankingData = Object.entries(aggregatedData).map(([empresaId, data]) => ({
+                    empresaId, nomeEmpresa: data.nomeEmpresa,
+                    produtividadeScore: (data.produtividadeTotal / data.metaCarros) * 100,
+                    ticketMedioScore: data.lastTicketMedio,
+                    vendaAgregadaScore: data.vendaSeguroTotal > 0 ? (data.vendaAgregadaTotal / data.vendaSeguroTotal) * 100 : 0,
+                    estabilidadeScores: Object.fromEntries(ESTABILIDADE_FIELDS.map(field => [field, calculateCV(data.estabilidadeHistory[field])]))
+                }));
+                
+                renderRanking(finalRankingData);
+            } catch (error) {
+                console.error("Erro ao buscar ranking:", error);
+                displayMessage('Falha ao buscar dados do ranking.', 'error', DOMElements.rankingMessageBox);
+            } finally {
+                DOMElements.rankingLoading.classList.add('hidden');
+            }
+        };
+
+        const renderHistoryItem = (data, isMasterView = false) => {
+            const productivityInfo = `<span class="history-item__meta">Prod.: ${data.produtividadeEntregues || 0} carros</span>`;
+            const launcherInfo = isMasterView && data.personName ? `<span class="history-item__meta">Por: ${data.personName}</span>` : '';
+
+            return `
+            <div class="history-item">
+                <div class="history-item__header">
+                    <h3 class="history-item__title">Lançamento: ${data.dataLancamento}</h3>
+                    <div class="history-item__meta-group">
+                        ${productivityInfo}
+                        ${launcherInfo}
+                    </div>
+                </div>
+                <ul class="history-item__details">
+                    <li><strong>Ticket Médio M.O.:</strong> R$ ${data.ticketMedioMO?.toFixed(2) || '0.00'}</li>
+                    <li><strong>Venda Agregada:</strong> ${data.vendaAgregadaFechados || 0} de ${data.vendaSeguroAbertos || 0}</li>
+                    <li><strong>Estabilidade:</strong> Fun: ${data.estabilidadeFunilaria||0}, Prep: ${data.estabilidadePreparacao||0}, Pin: ${data.estabilidadePintura||0}, Mon: ${data.estabilidadeMontagem||0}, Pol: ${data.estabilidadePolimento||0}</li>
+                </ul>
+            </div>`;
+        };
+
+        const renderReviewModal = (data) => `
+            <p><strong>Empresa:</strong> ${data.nomeEmpresa}</p>
+            <p><strong>Lançado por:</strong> ${data.personName}</p>
+            <p><strong>Data do Fato:</strong> ${data.dataLancamento}</p><hr style="margin:8px 0">
+            <p><strong>Produtividade:</strong> ${data.produtividadeEntregues} carros entregues</p>
+            <p><strong>Ticket Médio M.O. (mês):</strong> R$ ${data.ticketMedioMO.toFixed(2)}</p>
+            <p><strong>Venda Agregada (dia):</strong> ${data.vendaAgregadaFechados} de ${data.vendaSeguroAbertos} (${(data.vendaSeguroAbertos > 0 ? (data.vendaAgregadaFechados/data.vendaSeguroAbertos)*100 : 0).toFixed(1)}%)</p><hr style="margin:8px 0">
+            <p><strong>Estabilidade (carros finalizados no dia):</strong></p>
+            <ul style="list-style-position: inside; font-size: 0.9em;">
+                <li>Funilaria: ${data.estabilidadeFunilaria}</li> <li>Preparação: ${data.estabilidadePreparacao}</li>
+                <li>Pintura: ${data.estabilidadePintura}</li> <li>Montagem: ${data.estabilidadeMontagem}</li>
+                <li>Polimento: ${data.estabilidadePolimento}</li>
+            </ul>`;
+
+        const renderRanking = (data) => {
+            const container = DOMElements.rankingContainer;
+            container.innerHTML = '';
+            const weightedWins = data.reduce((acc, item) => ({...acc, [item.empresaId]: 0}), {});
+            const modalities = [
+                { title: 'Produtividade', field: 'produtividadeScore', sortDesc: true, format: val => `${val.toFixed(2)}%` },
+                { title: 'Ticket Médio M.O.', field: 'ticketMedioScore', sortDesc: true, format: val => `R$ ${val.toFixed(2)}` },
+                { title: 'Venda Agregada', field: 'vendaAgregadaScore', sortDesc: true, format: val => `${val.toFixed(2)}%` },
+                ...ESTABILIDADE_FIELDS.map(field => ({
+                    title: `Estabilidade: ${field.replace('estabilidade', '')}`,
+                    field: field, sortDesc: false,
+                    isStability: true, format: val => val === Infinity ? 'N/A' : `${val.toFixed(2)}% (CV)`
+                }))
+            ];
+            modalities.forEach(modality => {
+                const sorted = [...data].sort((a, b) => {
+                    const scoreA = modality.isStability ? a.estabilidadeScores[modality.field] : a[modality.field];
+                    const scoreB = modality.isStability ? b.estabilidadeScores[modality.field] : b[modality.field];
+                    if (modality.sortDesc) return scoreB - scoreA;
+                    if (scoreA === Infinity) return 1; if (scoreB === Infinity) return -1;
+                    return scoreA - scoreB;
+                }).slice(0, 3);
+                
+                if (sorted.length > 0) {
+                    const winnerScore = modality.isStability ? sorted[0].estabilidadeScores[modality.field] : sorted[0][modality.field];
+                    const weightKey = modality.isStability ? modality.field : modality.field;
+                    if (winnerScore > 0 && winnerScore !== Infinity) {
+                         weightedWins[sorted[0].empresaId] += MODALITY_WEIGHTS[weightKey] || 0;
+                    }
+                }
+                const card = document.createElement('div');
+                card.className = 'ranking-card';
+                let itemsHtml = '';
+                const medals = ['gold', 'silver', 'bronze'];
+                sorted.forEach((item, index) => {
+                    const score = modality.isStability ? item.estabilidadeScores[modality.field] : item[modality.field];
+                    if (score > 0 && score !== Infinity) {
+                        itemsHtml += `<div class="ranking-item ranking-item--${medals[index]}"><span class="ranking-item__name">#${index + 1} ${item.nomeEmpresa}</span><span class="ranking-item__score">${modality.format(score)}</span></div>`;
+                    }
+                });
+                const weightKey = modality.isStability ? modality.field : modality.field;
+                const weight = MODALITY_WEIGHTS[weightKey] || 0;
+                card.innerHTML = `<h3 class="ranking-card__title">${modality.title} <span style="font-weight:400; font-size:0.8em; color: var(--color-text-secondary)">(Peso: ${weight})</span></h3> ${itemsHtml}`;
+                if (itemsHtml) container.appendChild(card);
+            });
+            
+            const champion = Object.entries(weightedWins).reduce((champ, [empresaId, score]) => score > champ.score ? { empresaId, score } : champ, { empresaId: null, score: 0 });
+            if (champion.empresaId && champion.score > 0) {
+                const championData = data.find(item => item.empresaId === champion.empresaId);
+                DOMElements.championDetails.innerHTML = `<p class="champion-card__company-name">${championData.nomeEmpresa}</p><p>Total de Pontos (Peso): <strong>${champion.score.toFixed(1)}</strong></p>`;
+                DOMElements.championContainer.classList.remove('hidden');
+            }
+        };
+
+        const initApp = () => {
+            const loggedInUser = sessionStorage.getItem('loggedInUser');
+            if (loggedInUser) {
+                initializeAppState(loggedInUser);
+            } else {
+                toggleView('login');
+            }
+            DOMElements.lancaDateInput.max = getLocalDateISO();
+            DOMElements.lancaDateInput.value = getLocalDateISO();
+            DOMElements.loginForm.addEventListener('submit', handleLogin);
+            DOMElements.lancaForm.addEventListener('submit', prepareDailyLaunch);
+            DOMElements.modalCancelButton.addEventListener('click', () => DOMElements.confirmModal.classList.remove('is-visible'));
+            DOMElements.modalConfirmButton.addEventListener('click', saveDailyLaunch);
+            DOMElements.logoutButton.addEventListener('click', handleLogout);
+            DOMElements.refreshHistoryButton.addEventListener('click', fetchLaunchHistory);
+            DOMElements.navButtons.forEach(button => button.addEventListener('click', () => showScreen(button.dataset.screen)));
+        };
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
